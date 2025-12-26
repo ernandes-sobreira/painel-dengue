@@ -1,0 +1,46 @@
+DENGUE - Notificações registradas no Sistema de Informação de Agravos de Notificação - Brasil
+Casos Prováveis por Ano notificação e Escolaridade
+UF de residência: Acre, Alagoas, Amapá, Amazonas, Bahia, Ceará, Distrito Federal, Espírito Santo, Goiás, Maranhão, Mato Grosso, Mato Grosso do Sul, Minas Gerais, Pará, Paraíba, Paraná, Pernambuco, Piauí, Rio de Janeiro, Rio Grande do Norte, Rio Grande do Sul, Rondônia, Roraima, Santa Catarina, São Paulo, Sergipe, Tocantins
+Período:2014-2025
+"Ano notificação";"Ign/Branco";"Analfabeto";"1ª a 4ª série incompleta do EF";"4ª série completa do EF";"5ª a 8ª série incompleta do EF";"Ensino fundamental completo";"Ensino médio incompleto";"Ensino médio completo";"Educação superior incompleta";"Educação superior completa";"Não se aplica";"Total"
+"2013";609;12;50;29;82;38;69;98;13;29;79;1108
+"2014";327861;4268;24817;14802;38890;21259;30635;63616;10120;17877;36966;591111
+"2015";994089;10326;61777;39812;100795;56866;79053;177052;25701;48587;103677;1697735
+"2016";986053;7405;46894;28244;73895;42527;59010;126863;18322;33745;95797;1518755
+"2017";143868;1712;9512;4825;12662;7967;11995;22797;3014;5290;19688;243330
+"2018";139154;1582;9545;6080;16971;10937;15068;31441;4070;8592;22929;266369
+"2019";812659;7705;56078;34104;96195;56255;87601;215344;26529;56134;107943;1556547
+"2020";417135;6595;41109;24931;69226;43262;60826;161417;19660;45276;63042;952479
+"2021";268970;2644;16985;10484;30115;18839;25646;80700;8845;24733;43782;531743
+"2022";718576;6249;49260;28702;72391;54583;69584;215672;21119;59051;99151;1394338
+"2023";755646;7820;50656;28227;90959;61991;77077;249294;21234;65089;100936;1508929
+"2024";3546383;24395;187639;118818;321866;226938;310109;1088573;90816;259601;401404;6576542
+"2025";826134;5908;48906;30464;82668;58235;81397;302090;24177;89270;109367;1658616
+"Total";9937137;86621;603228;369522;1006715;659697;908070;2734957;273620;713274;1204761;18497602
+ Fonte: Ministério da Saúde/SVSA - Sistema de Informação de Agravos de Notificação - Sinan Net
+ Notas:
+ 
+ Para os casos prováveis foram incluídas todas notificações, exceto casos descartados.
+ As bases de dados de dengue aqui disponíveis compõem um banco único a partir de 2014, podendo haver pequenas divergências com os dados disponibilizados pelo CGARB
+ (Coordenação Geral de Vigilância de Arboviroses - CGARB) em sua série histórica, que para tal, realiza análise ano a ano, com a base congelada para cada ano analisado.
+ Para tabular os casos graves (classificação final igual a dengue com complicações, febre hemorrágica da dengue, síndrome do choque da dengue, dengue com sinais de alarme
+ e dengue grave) é necessário considerar também o critério de confirmação (laboratorial e clínico-epidemiológico).
+ A partir de 2020 o estado do Espírito Santo passou a utilizar o sistema e-SUS Vigilância em Saúde. Portanto, para os casos de Arboviroses urbanas do Espírito Santo
+ foram considerados apenas os dados disponibilizados pelo Sinan online (dengue e chikungunya) e Sinan Net (zika).
+ Períodos Disponíveis ou período - Correspondem aos anos de notificação dos casos e semana epidemiológica, em cada período pode apresentar notificações com data de notificação
+ do ano anterior (semana epidemiológica 52 ou 53) e posterior (semana epidemiológica 01).
+ Para cálculo da incidência recomenda-se utilizar locais de residência.
+ Dados de 2014 atualizados em 13/07/2015.
+ Dados de 2015 atualizados em 27/09/2016.
+ Dados de 2016 atualizados em 06/07/2017.
+ Dados de 2017 atualizados em 18/07/2018.
+ Dados de 2018 atualizados em 01/10/2019.
+ Dados de 2019 atualizados em 10/07/2020.
+ Dados de 2020 atualizados em 23/07/2021.
+ Dados de 2021 atualizados em 12/07/2022.
+ Dados de 2022 atualizados em 18/07/2023.
+ Dados de 2023 atualizados em 04/06/2024 às 07 horas.
+ Dados de 2024 atualizados em 28/07/2025 às 18:30 horas, incluídos os dados do ES em 22/12/2025.
+ Dados de 2025 atualizados em 22/12/2025 às 03:00 horas, sujeitos à revisão e incluídos os dados do ES em 22/12/2025.
+ * Dados disponibilizados no TABNET em dezembro de 2025.
+ 

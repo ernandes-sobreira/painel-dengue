@@ -1,0 +1,85 @@
+DENGUE - Notificações registradas no Sistema de Informação de Agravos de Notificação - Brasil
+Casos Prováveis por Ano 1º Sintoma(s) e Mês 1º Sintoma(s)
+Período:2014-2025
+"Ano 1º Sintoma(s)";"Ign/Em Branco";"Jan";"Fev";"Mar";"Abr";"Mai";"Jun";"Jul";"Ago";"Set";"Out";"Nov";"Dez";"Total"
+"Em Branco/ign";163;3;4;8;9;4;-;-;-;-;1;1;1;194
+"<1975";394;358;300;339;336;326;295;354;335;367;379;345;352;4480
+"1975";17;18;21;19;17;20;16;13;16;18;19;16;28;238
+"1976";18;11;14;14;22;19;19;16;19;20;18;29;32;251
+"1977";25;14;13;11;25;18;11;16;22;10;12;30;14;221
+"1978";31;20;15;20;21;17;14;27;15;26;22;26;24;278
+"1979";26;11;27;22;14;20;20;21;16;17;19;12;14;239
+"1980";29;17;16;17;25;22;21;27;15;18;26;20;25;278
+"1981";35;20;19;20;23;11;22;27;23;27;20;22;26;295
+"1982";24;26;19;29;19;19;21;29;22;25;23;31;22;309
+"1983";30;22;27;23;27;16;21;16;21;29;29;21;22;304
+"1984";24;23;17;19;20;20;24;27;21;22;18;30;18;283
+"1985";32;21;20;17;14;19;21;25;19;22;18;20;15;263
+"1986";35;20;29;20;30;17;25;27;35;27;21;29;21;336
+"1987";20;22;19;18;18;29;14;17;20;15;29;23;25;269
+"1988";29;24;17;22;25;18;20;19;11;24;23;24;22;278
+"1989";27;23;29;19;15;31;24;25;32;24;29;37;22;337
+"1990";26;18;13;21;21;23;23;22;25;19;16;19;22;268
+"1991";25;20;23;21;15;22;16;21;25;19;24;24;20;275
+"1992";29;24;28;19;24;23;27;20;18;24;30;30;23;319
+"1993";31;22;24;25;31;17;22;26;21;27;20;19;29;314
+"1994";37;21;30;22;21;30;29;18;18;25;34;18;30;333
+"1995";30;19;14;18;28;21;28;21;26;24;33;24;24;310
+"1996";20;18;27;29;26;24;30;39;22;23;29;24;30;341
+"1997";30;26;31;25;30;26;27;24;18;21;33;14;38;343
+"1998";33;24;20;18;27;22;20;15;17;27;35;18;37;313
+"1999";27;22;19;15;21;19;19;15;18;18;14;16;13;236
+"2000";46;10;14;15;17;22;12;19;17;17;18;16;13;236
+"2001";26;27;36;38;52;51;30;18;22;17;19;23;23;382
+"2002";63;12;11;23;30;25;15;18;11;19;16;14;17;274
+"2003";21;16;5;21;24;19;16;19;11;8;19;10;15;204
+"2004";19;25;10;16;15;16;16;16;16;16;12;15;17;209
+"2005";21;13;15;23;34;25;23;15;19;19;16;19;18;260
+"2006";22;23;33;26;34;21;18;17;16;21;13;16;15;275
+"2007";22;13;12;29;10;15;12;13;7;13;15;11;14;186
+"2008";15;16;12;16;17;11;5;13;13;13;17;13;16;177
+"2009";24;16;13;24;12;33;23;14;11;13;13;7;20;223
+"2010";47;58;87;103;94;91;38;17;21;17;29;24;21;647
+"2011";23;33;48;66;67;56;39;13;15;14;13;32;15;434
+"2012";14;26;42;42;36;27;20;13;11;14;16;11;47;319
+"2013";14;146;150;196;272;221;58;43;30;29;27;114;3469;4769
+"2014";14;32663;49224;84070;148821;113385;44886;23141;16144;18658;19635;19467;21406;591514
+"2015";24;86347;185550;398717;405065;265885;98610;40586;26565;22364;26567;54054;98765;1709099
+"2016";16;229408;384818;391510;281884;104646;32845;16880;11125;8291;9183;12235;15024;1497865
+"2017";19;26976;29781;39786;40575;34306;20070;10147;8034;6893;7746;8122;9410;241865
+"2018";27;19903;24046;38436;46428;38127;20837;13222;10120;7746;10036;14866;25481;269275
+"2019";542;69439;125799;230204;366868;402790;162123;60438;30896;21789;20066;25404;37146;1553504
+"2020";911869;-;-;-;-;-;-;-;-;-;9007;11242;12384;944502
+"2021";131;27385;51023;80363;110164;82945;48795;29416;18434;13637;11778;19144;38720;531935
+"2022";-;54423;81945;249325;397707;312728;114705;56292;33061;21626;20196;24535;27451;1393994
+"2023";-;67621;133460;312726;399750;277199;91950;38191;24509;20898;24179;41290;82119;1513892
+"2024";-;408209;1077321;1731917;1632474;1112174;299116;89123;44039;33727;32962;46535;71916;6579513
+"2025";-;199349;264478;382490;319629;224702;71336;33941;28441;30324;32775;38042;25211;1650718
+"Total";914266;1223024;2408768;3941032;4150983;2970373;1006427;412532;252438;207101;225347;316183;469702;18498176
+ Fonte: Ministério da Saúde/SVSA - Sistema de Informação de Agravos de Notificação - Sinan Net
+ Notas:
+ 
+ Para os casos prováveis foram incluídas todas notificações, exceto casos descartados.
+ As bases de dados de dengue aqui disponíveis compõem um banco único a partir de 2014, podendo haver pequenas divergências com os dados disponibilizados pelo CGARB
+ (Coordenação Geral de Vigilância de Arboviroses - CGARB) em sua série histórica, que para tal, realiza análise ano a ano, com a base congelada para cada ano analisado.
+ Para tabular os casos graves (classificação final igual a dengue com complicações, febre hemorrágica da dengue, síndrome do choque da dengue, dengue com sinais de alarme
+ e dengue grave) é necessário considerar também o critério de confirmação (laboratorial e clínico-epidemiológico).
+ A partir de 2020 o estado do Espírito Santo passou a utilizar o sistema e-SUS Vigilância em Saúde. Portanto, para os casos de Arboviroses urbanas do Espírito Santo
+ foram considerados apenas os dados disponibilizados pelo Sinan online (dengue e chikungunya) e Sinan Net (zika).
+ Períodos Disponíveis ou período - Correspondem aos anos de notificação dos casos e semana epidemiológica, em cada período pode apresentar notificações com data de notificação
+ do ano anterior (semana epidemiológica 52 ou 53) e posterior (semana epidemiológica 01).
+ Para cálculo da incidência recomenda-se utilizar locais de residência.
+ Dados de 2014 atualizados em 13/07/2015.
+ Dados de 2015 atualizados em 27/09/2016.
+ Dados de 2016 atualizados em 06/07/2017.
+ Dados de 2017 atualizados em 18/07/2018.
+ Dados de 2018 atualizados em 01/10/2019.
+ Dados de 2019 atualizados em 10/07/2020.
+ Dados de 2020 atualizados em 23/07/2021.
+ Dados de 2021 atualizados em 12/07/2022.
+ Dados de 2022 atualizados em 18/07/2023.
+ Dados de 2023 atualizados em 04/06/2024 às 07 horas.
+ Dados de 2024 atualizados em 28/07/2025 às 18:30 horas, incluídos os dados do ES em 22/12/2025.
+ Dados de 2025 atualizados em 22/12/2025 às 03:00 horas, sujeitos à revisão e incluídos os dados do ES em 22/12/2025.
+ * Dados disponibilizados no TABNET em dezembro de 2025.
+ 

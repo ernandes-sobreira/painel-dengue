@@ -1,0 +1,60 @@
+DENGUE - Notificações registradas no Sistema de Informação de Agravos de Notificação - Brasil
+Casos Prováveis por UF de residência e Ano notificação
+UF de residência: Acre, Alagoas, Amapá, Amazonas, Bahia, Ceará, Distrito Federal, Espírito Santo, Goiás, Maranhão, Mato Grosso, Mato Grosso do Sul, Minas Gerais, Pará, Paraíba, Paraná, Pernambuco, Piauí, Rio de Janeiro, Rio Grande do Norte, Rio Grande do Sul, Rondônia, Roraima, Santa Catarina, São Paulo, Sergipe, Tocantins
+Período:2014-2025
+"UF de residência";"2013";"2014";"2015";"2016";"2017";"2018";"2019";"2020";"2021";"2022";"2023";"2024";"2025";"Total"
+"11 Rondônia";22;1996;2245;7925;2198;540;998;3971;2316;14275;10722;5256;2378;54842
+"12 Acre";13;28117;5817;2197;1862;7313;10179;7709;14954;3499;7165;6272;8976;104073
+"13 Amazonas";30;6665;3932;7596;3925;2359;4016;6086;8335;5443;6356;8694;5318;68755
+"14 Roraima";10;1129;1115;212;288;111;1605;494;116;60;233;705;484;6562
+"15 Pará";21;4553;7900;10957;7890;3819;5482;3587;5133;6128;5877;21076;17560;99983
+"16 Amapá";1;2193;3400;1819;921;764;193;67;281;293;1230;10694;2468;24324
+"17 Tocantins";39;3647;7953;7938;4914;2873;13727;1916;9523;20757;3245;4259;3403;84194
+"21 Maranhão";-;2654;8093;23938;7229;2185;5729;2606;1367;7197;5000;11367;5577;82942
+"22 Piauí";2;7691;7704;5247;5276;1937;8028;2234;3996;31602;7580;15103;9189;105589
+"23 Ceará";29;22843;63600;49736;39451;4171;16310;24120;35454;42779;14459;12560;6018;331530
+"24 Rio Grande do Norte";29;11543;22900;57071;7469;23734;31909;6940;3844;42112;7678;17478;9763;242470
+"25 Paraíba";18;5654;23301;36113;3864;11030;18941;6883;16094;28903;7229;14591;7642;180263
+"26 Pernambuco";20;10544;111194;62985;7915;11245;38054;20155;36445;16096;7954;22246;22629;367482
+"27 Alagoas";28;13359;27255;19587;2937;2213;21043;2419;7620;33649;4764;17912;7944;160730
+"28 Sergipe";2;2245;9257;3532;600;238;5989;1858;764;5203;2880;1918;1167;35653
+"29 Bahia";29;13896;55575;67793;10109;9786;68223;83418;25089;35942;47630;232567;32635;682692
+"31 Minas Gerais";148;58344;193061;529702;26507;29361;478898;82355;22291;89356;406268;1659034;167136;3742461
+"32 Espírito Santo";105;19132;35440;43377;6884;10306;64929;7312;32;66;255;147047;35322;370207
+"33 Rio de Janeiro";52;7860;73666;88616;11035;14917;32276;4581;2848;11085;49910;302309;29471;628626
+"35 São Paulo";58;226940;749791;203229;9415;18566;443862;206309;157870;350492;336825;2183249;899342;5785948
+"41 Paraná";62;22728;45656;62753;2216;1406;45663;263696;34800;156251;209595;647882;110798;1603506
+"42 Santa Catarina";-;134;4446;5093;187;185;2104;11834;19506;85170;141444;334959;25983;631045
+"43 Rio Grande do Sul";-;154;1704;3181;190;131;1674;4006;10877;67292;38697;224781;85212;437899
+"50 Mato Grosso do Sul";30;3416;32079;47295;2341;5675;65515;52282;9950;26379;45236;18907;14135;323240
+"51 Mato Grosso";61;7222;21659;21478;9433;7334;11274;35035;22353;35383;28605;43029;35328;278194
+"52 Goiás";292;94326;168981;131234;64263;91716;121185;63344;63545;208666;71216;334670;101670;1515108
+"53 Distrito Federal";7;12126;10011;18151;4011;2454;38741;47262;16340;70260;40876;277977;11068;549284
+"Total";1108;591111;1697735;1518755;243330;266369;1556547;952479;531743;1394338;1508929;6576542;1658616;18497602
+ Fonte: Ministério da Saúde/SVSA - Sistema de Informação de Agravos de Notificação - Sinan Net
+ Notas:
+ 
+ Para os casos prováveis foram incluídas todas notificações, exceto casos descartados.
+ As bases de dados de dengue aqui disponíveis compõem um banco único a partir de 2014, podendo haver pequenas divergências com os dados disponibilizados pelo CGARB
+ (Coordenação Geral de Vigilância de Arboviroses - CGARB) em sua série histórica, que para tal, realiza análise ano a ano, com a base congelada para cada ano analisado.
+ Para tabular os casos graves (classificação final igual a dengue com complicações, febre hemorrágica da dengue, síndrome do choque da dengue, dengue com sinais de alarme
+ e dengue grave) é necessário considerar também o critério de confirmação (laboratorial e clínico-epidemiológico).
+ A partir de 2020 o estado do Espírito Santo passou a utilizar o sistema e-SUS Vigilância em Saúde. Portanto, para os casos de Arboviroses urbanas do Espírito Santo
+ foram considerados apenas os dados disponibilizados pelo Sinan online (dengue e chikungunya) e Sinan Net (zika).
+ Períodos Disponíveis ou período - Correspondem aos anos de notificação dos casos e semana epidemiológica, em cada período pode apresentar notificações com data de notificação
+ do ano anterior (semana epidemiológica 52 ou 53) e posterior (semana epidemiológica 01).
+ Para cálculo da incidência recomenda-se utilizar locais de residência.
+ Dados de 2014 atualizados em 13/07/2015.
+ Dados de 2015 atualizados em 27/09/2016.
+ Dados de 2016 atualizados em 06/07/2017.
+ Dados de 2017 atualizados em 18/07/2018.
+ Dados de 2018 atualizados em 01/10/2019.
+ Dados de 2019 atualizados em 10/07/2020.
+ Dados de 2020 atualizados em 23/07/2021.
+ Dados de 2021 atualizados em 12/07/2022.
+ Dados de 2022 atualizados em 18/07/2023.
+ Dados de 2023 atualizados em 04/06/2024 às 07 horas.
+ Dados de 2024 atualizados em 28/07/2025 às 18:30 horas, incluídos os dados do ES em 22/12/2025.
+ Dados de 2025 atualizados em 22/12/2025 às 03:00 horas, sujeitos à revisão e incluídos os dados do ES em 22/12/2025.
+ * Dados disponibilizados no TABNET em dezembro de 2025.
+ 
