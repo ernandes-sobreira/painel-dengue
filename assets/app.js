@@ -1,98 +1,127 @@
-const DATA = {
-  br:"data/dados-dengue.csv",
-  uf:"data/dados-dengue-estados.csv",
-  mun:"data/dados-dengue-municipios.csv",
-  sexo:"data/dados-dengue-sexo.csv",
-  raca:"data/dados-dengue-raca.csv",
-  esc:"data/dados-dengue-escolaridade.csv"
+const FILES = {
+  br: "data/dados-dengue.csv",
+  uf: "data/dados-dengue-estados.csv",
+  mun: "data/dados-dengue-municipios.csv"
 };
 
-const START = 2014;
-let DB = {}, chart;
+const START_YEAR = 2014;
+
+let DB = {};
+let chart;
 
 const $ = id => document.getElementById(id);
-const fmt = n => new Intl.NumberFormat("pt-BR").format(n);
+const fmt = n => new Intl.NumberFormat("pt-BR").format(n || 0);
 
 async function loadCSV(url){
-  const t = await fetch(url).then(r=>r.text());
-  return Papa.parse(t,{header:true,skipEmptyLines:true}).data;
+  const t = await fetch(url).then(r => r.text());
+  return Papa.parse(t, { header:true, skipEmptyLines:true }).data;
 }
 
-function linReg(x,y){
-  const n=x.length, mx=x.reduce((a,b)=>a+b)/n, my=y.reduce((a,b)=>a+b)/n;
-  let num=0,den=0;
-  for(let i=0;i<n;i++){ num+=(x[i]-mx)*(y[i]-my); den+=(x[i]-mx)**2; }
-  const slope=num/den, intercept=my-slope*mx;
-  return {slope,intercept};
+function parseBrasil(rows){
+  return rows
+    .filter(r => +r.Ano >= START_YEAR)
+    .map(r => ({ ano:+r.Ano, casos:+r.Total }));
 }
 
-function setupYears(){
-  for(let y=START;y<=2025;y++){
-    $("y0").add(new Option(y,y));
-    $("y1").add(new Option(y,y));
-  }
-  $("y0").value=START;
-  $("y1").value=2025;
+function parseEstados(rows){
+  return rows
+    .filter(r => +r.Ano >= START_YEAR)
+    .map(r => ({
+      ano:+r.Ano,
+      uf:r.UF,
+      casos:+r.Casos
+    }));
+}
+
+function parseMunicipios(rows){
+  return rows
+    .filter(r => +r.Ano >= START_YEAR)
+    .map(r => {
+      const txt = r.MUNICIPIO.trim();
+      const parts = txt.split(" ");
+      const ibge = parts[0];
+      const nome = parts.slice(1).join(" ");
+      return {
+        ano:+r.Ano,
+        uf:ibge.slice(0,2),
+        municipio:nome,
+        casos:+r.Casos
+      };
+    });
 }
 
 async function init(){
-  for(const k in DATA) DB[k]=await loadCSV(DATA[k]);
-
-  ["br","uf","mun","sexo","raca","esc"].forEach(v=>{
-    $("layer").add(new Option(v,v));
-  });
+  DB.br = parseBrasil(await loadCSV(FILES.br));
+  DB.uf = parseEstados(await loadCSV(FILES.uf));
+  DB.mun = parseMunicipios(await loadCSV(FILES.mun));
 
   setupYears();
+  setupUFs();
+}
+
+function setupYears(){
+  const years = [...new Set(DB.br.map(d=>d.ano))];
+  years.forEach(y=>{
+    $("y0").add(new Option(y,y));
+    $("y1").add(new Option(y,y));
+  });
+  $("y0").value = years[0];
+  $("y1").value = years.at(-1);
+}
+
+function setupUFs(){
+  const ufs = [...new Set(DB.uf.map(d=>d.uf))];
+  $("uf").innerHTML = `<option value="">—</option>`;
+  ufs.forEach(u => $("uf").add(new Option(u,u)));
+
+  $("uf").onchange = ()=>{
+    const sel = $("uf").value;
+    const muns = [...new Set(DB.mun.filter(d=>d.uf===sel).map(d=>d.municipio))];
+    $("mun").innerHTML = `<option value="">—</option>`;
+    muns.forEach(m => $("mun").add(new Option(m,m)));
+  };
 }
 
 function run(){
-  const layer=$("layer").value;
-  let rows=DB[layer];
+  const layer = $("layer").value;
+  const y0 = +$("y0").value;
+  const y1 = +$("y1").value;
 
-  const y0=+$("y0").value, y1=+$("y1").value;
-  rows=rows.filter(r=>+r.Ano>=y0 && +r.Ano<=y1);
+  let rows = [];
 
-  const years=rows.map(r=>+r.Ano);
-  const vals=rows.map(r=>+r.Casos);
+  if(layer==="br") rows = DB.br;
+  if(layer==="uf") rows = DB.uf.filter(d=>d.uf===$("uf").value);
+  if(layer==="mun") rows = DB.mun.filter(d=>d.municipio===$("mun").value);
 
-  $("kTotal").textContent=fmt(vals.reduce((a,b)=>a+b,0));
-  $("kMean").textContent=fmt(vals.reduce((a,b)=>a+b,0)/vals.length);
-  $("kPeak").textContent=Math.max(...vals);
+  rows = rows.filter(d=>d.ano>=y0 && d.ano<=y1);
+
+  const anos = rows.map(d=>d.ano);
+  const vals = rows.map(d=>d.casos);
+
+  $("kTotal").textContent = fmt(vals.reduce((a,b)=>a+b,0));
+  $("kMean").textContent = fmt(vals.reduce((a,b)=>a+b,0)/vals.length);
+  $("kPeak").textContent = fmt(Math.max(...vals));
 
   if(chart) chart.destroy();
-
-  const datasets=[{
-    label:"Casos",
-    data:vals,
-    borderColor:"#2563eb",
-    tension:0.3
-  }];
-
-  if($("advanced").checked){
-    const lr=linReg(years,vals);
-    datasets.push({
-      label:"Tendência",
-      data:years.map(y=>lr.intercept+lr.slope*y),
-      borderDash:[5,5],
-      borderColor:"#ec4899"
-    });
-    $("advBox").style.display="block";
-    $("kTrend").textContent=lr.slope>0?"Crescente":"Decrescente";
-  } else {
-    $("advBox").style.display="none";
-  }
-
-  chart=new Chart($("chart"),{
+  chart = new Chart($("chart"),{
     type:"line",
-    data:{labels:years,datasets},
-    options:{plugins:{zoom:{zoom:{wheel:{enabled:true},mode:"x"}}}}
+    data:{
+      labels:anos,
+      datasets:[{
+        label:"Casos",
+        data:vals,
+        borderColor:"#ec4899",
+        backgroundColor:"rgba(236,72,153,0.25)",
+        tension:0.3
+      }]
+    }
   });
 
-  $("table").innerHTML="<tr><th>Ano</th><th>Casos</th></tr>"+
-    years.map((y,i)=>`<tr><td>${y}</td><td>${fmt(vals[i])}</td></tr>`).join("");
+  $("table").innerHTML =
+    "<tr><th>Ano</th><th>Casos</th></tr>" +
+    rows.map(r=>`<tr><td>${r.ano}</td><td>${fmt(r.casos)}</td></tr>`).join("");
 }
 
-$("run").onclick=run;
-$("export").onclick=()=>alert("Exportação mantida como antes");
+$("run").onclick = run;
 
 init();
