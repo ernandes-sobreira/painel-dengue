@@ -1,16 +1,15 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Painel Dengue</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel Dengue</title>
 
-<link rel="icon" href="icon.png">
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+  <link rel="icon" href="icon.png">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 
-<link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 
 <body>
@@ -23,7 +22,11 @@
 <main>
   <aside>
     <label>Camada</label>
-    <select id="layer"></select>
+    <select id="layer">
+      <option value="br">Brasil</option>
+      <option value="uf">Estados</option>
+      <option value="mun">Municípios</option>
+    </select>
 
     <label>UF</label>
     <select id="uf"></select>
@@ -37,13 +40,7 @@
     <label>Ano final</label>
     <select id="y1"></select>
 
-    <label>
-      <input type="checkbox" id="advanced">
-      Ativar estatística avançada
-    </label>
-
     <button id="run">Responder</button>
-    <button id="export">Baixar CSV</button>
   </aside>
 
   <section>
@@ -52,16 +49,9 @@
     </div>
 
     <div class="card kpis">
-      <div><b>Total</b><span id="kTotal"></span></div>
-      <div><b>Média</b><span id="kMean"></span></div>
-      <div><b>Pico</b><span id="kPeak"></span></div>
-      <div id="advBox" style="display:none">
-        <b>Tendência</b><span id="kTrend"></span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div id="answer"></div>
+      <div><b>Total</b><span id="kTotal">—</span></div>
+      <div><b>Média</b><span id="kMean">—</span></div>
+      <div><b>Pico</b><span id="kPeak">—</span></div>
     </div>
 
     <div class="card">
