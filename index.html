@@ -4,169 +4,81 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-  <title>Painel Dengue — DATASUS (2014+)</title>
-  <meta name="theme-color" content="#0ea5e9"/>
-  <meta name="description" content="Painel Dengue: análises e tendências (2014+) por Brasil/UF/Município e perfil (sexo, raça, escolaridade, faixa etária). Fonte: DATASUS. Feito por Ernandes Sobreira."/>
+  <title>Painel Dengue</title>
+  <meta name="theme-color" content="#ec4899"/>
 
-  <!-- Ícone (você sobe depois como icon.png) -->
   <link rel="icon" href="icon.png"/>
-  <link rel="apple-touch-icon" href="icon.png"/>
   <link rel="manifest" href="manifest.json"/>
 
-  <link rel="stylesheet" href="assets/style.css"/>
-
-  <!-- PapaParse (CSV) -->
+  <!-- Libs -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+
+  <link rel="stylesheet" href="assets/style.css"/>
 </head>
 
 <body>
-  <header class="top">
-    <div class="brand">
-      <div class="logo">🦟</div>
-      <div>
-        <h1>Painel Dengue</h1>
-        <p class="muted">Análises e tendências (2014+) • Fonte: DATASUS/SINAN • Feito por <b>Ernandes Sobreira</b></p>
+<header class="top">
+  <h1>🌸 Painel Dengue</h1>
+  <p>Análises epidemiológicas (2014+) • DATASUS/SINAN • Ernandes Sobreira</p>
+</header>
+
+<main class="layout">
+  <aside class="panel">
+    <h2>Camada</h2>
+    <select id="layer">
+      <option value="br">Brasil</option>
+      <option value="uf">Estados</option>
+      <option value="mun">Municípios</option>
+      <option value="sexo">Perfil: Sexo</option>
+      <option value="raca">Perfil: Raça/Cor</option>
+      <option value="esc">Perfil: Escolaridade</option>
+    </select>
+
+    <div id="geo">
+      <label>UF</label>
+      <select id="uf"></select>
+
+      <label>Município</label>
+      <select id="mun"></select>
+    </div>
+
+    <label>Ano inicial</label>
+    <select id="y0"></select>
+
+    <label>Ano final</label>
+    <select id="y1"></select>
+
+    <label>Pergunta</label>
+    <select id="question"></select>
+
+    <button id="run">Responder</button>
+    <button id="export">Baixar CSV</button>
+  </aside>
+
+  <section class="content">
+    <div class="card">
+      <h2>Resposta automática</h2>
+      <div id="answer">Selecione filtros e clique em <b>Responder</b>.</div>
+    </div>
+
+    <div class="card">
+      <canvas id="chart"></canvas>
+      <div class="kpis">
+        <div><b>Total</b><span id="kTotal">—</span></div>
+        <div><b>Média</b><span id="kMean">—</span></div>
+        <div><b>Tendência</b><span id="kTrend">—</span></div>
+        <div><b>Significância</b><span id="kSig">—</span></div>
       </div>
     </div>
 
-    <div class="actions">
-      <button id="btnReload" class="ghost" title="Recarrega os CSVs da pasta /data">Recarregar dados</button>
-      <button id="btnExportView" class="ghost" title="Baixa o que está sendo exibido (tabela da visão atual)">Baixar visão (CSV)</button>
+    <div class="card">
+      <table id="table"></table>
     </div>
-  </header>
+  </section>
+</main>
 
-  <main class="layout">
-    <aside class="card">
-      <h2>Objetivo</h2>
-      <p class="muted">
-        Este painel apoia <b>políticas públicas locais</b> ao responder perguntas práticas:
-        <b>onde</b> os casos se concentram, <b>quem</b> é mais afetado, <b>quando</b> ocorre o pico e se o cenário está
-        <b>crescendo ou diminuindo</b> no tempo.
-      </p>
-
-      <h2>Como usar</h2>
-      <ol class="muted">
-        <li>Escolha a <b>camada</b> (Brasil/UF/Município ou Perfil).</li>
-        <li>Defina o <b>período</b> (2014+).</li>
-        <li>Selecione uma <b>pergunta</b> e veja <b>gráficos + resposta</b>.</li>
-      </ol>
-
-      <div class="sep"></div>
-
-      <h2>Camada</h2>
-      <div class="row">
-        <select id="layer">
-          <option value="br">Brasil (mês do 1º sintoma)</option>
-          <option value="uf">Estados (UF — ano)</option>
-          <option value="mun">Municípios (ano)</option>
-          <option value="sexo">Perfil: Sexo (ano)</option>
-          <option value="raca">Perfil: Raça/Cor (ano)</option>
-          <option value="esc">Perfil: Escolaridade (ano)</option>
-          <option value="faixa">Perfil: Faixa etária (mês)</option>
-        </select>
-      </div>
-
-      <div id="geoFilters" class="block">
-        <div class="row">
-          <div class="field">
-            <label>UF</label>
-            <select id="uf" disabled></select>
-          </div>
-          <div class="field">
-            <label>Município</label>
-            <select id="mun" disabled></select>
-          </div>
-        </div>
-      </div>
-
-      <div class="block">
-        <div class="row">
-          <div class="field">
-            <label>Ano inicial</label>
-            <select id="y0"></select>
-          </div>
-          <div class="field">
-            <label>Ano final</label>
-            <select id="y1"></select>
-          </div>
-        </div>
-      </div>
-
-      <div id="profileFilters" class="block" style="display:none">
-        <div class="row">
-          <div class="field">
-            <label>Categoria (coluna)</label>
-            <select id="cat"></select>
-          </div>
-        </div>
-      </div>
-
-      <h2>Pergunta</h2>
-      <div class="row">
-        <select id="question"></select>
-      </div>
-
-      <div class="row">
-        <button id="btnRun">Responder</button>
-      </div>
-
-      <p id="status" class="hint">Carregando dados…</p>
-    </aside>
-
-    <section class="content">
-      <section class="card">
-        <h2>Resposta automática</h2>
-        <div id="answer" class="answer">
-          <div class="muted">Selecione a camada, o período e a pergunta. Depois clique em <b>Responder</b>.</div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Gráfico</h2>
-        <div class="chartWrap">
-          <canvas id="chart" height="140"></canvas>
-        </div>
-
-        <div class="kpis">
-          <div class="kpi">
-            <div class="kpiLabel">Total no período</div>
-            <div id="kpiTotal" class="kpiValue">—</div>
-          </div>
-          <div class="kpi">
-            <div class="kpiLabel">Média</div>
-            <div id="kpiMean" class="kpiValue">—</div>
-          </div>
-          <div class="kpi">
-            <div class="kpiLabel">Pico</div>
-            <div id="kpiPeak" class="kpiValue">—</div>
-          </div>
-          <div class="kpi">
-            <div class="kpiLabel">Tendência</div>
-            <div id="kpiTrend" class="kpiValue">—</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Tabela (visão atual)</h2>
-        <div class="tableWrap">
-          <table id="table">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <footer class="foot muted">
-    <span>
-      Fonte: DATASUS/SINAN (TABNET) • Período analisado: 2014+ • Painel Dengue — Ernandes Sobreira
-    </span>
-  </footer>
-
-  <script src="assets/app.js"></script>
+<script src="assets/app.js"></script>
 </body>
 </html>
