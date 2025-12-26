@@ -1,48 +1,35 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Dengue</title>
 
-  <title>Painel Dengue</title>
-  <meta name="theme-color" content="#ec4899"/>
+<link rel="icon" href="icon.png">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
-  <link rel="icon" href="icon.png"/>
-  <link rel="manifest" href="manifest.json"/>
-
-  <!-- Libs -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
-
-  <link rel="stylesheet" href="assets/style.css"/>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 
 <body>
-<header class="top">
-  <h1>🌸 Painel Dengue</h1>
+
+<header>
+  <h1>Painel Dengue</h1>
   <p>Análises epidemiológicas (2014+) • DATASUS/SINAN • Ernandes Sobreira</p>
 </header>
 
-<main class="layout">
-  <aside class="panel">
-    <h2>Camada</h2>
-    <select id="layer">
-      <option value="br">Brasil</option>
-      <option value="uf">Estados</option>
-      <option value="mun">Municípios</option>
-      <option value="sexo">Perfil: Sexo</option>
-      <option value="raca">Perfil: Raça/Cor</option>
-      <option value="esc">Perfil: Escolaridade</option>
-    </select>
+<main>
+  <aside>
+    <label>Camada</label>
+    <select id="layer"></select>
 
-    <div id="geo">
-      <label>UF</label>
-      <select id="uf"></select>
+    <label>UF</label>
+    <select id="uf"></select>
 
-      <label>Município</label>
-      <select id="mun"></select>
-    </div>
+    <label>Município</label>
+    <select id="mun"></select>
 
     <label>Ano inicial</label>
     <select id="y0"></select>
@@ -50,27 +37,31 @@
     <label>Ano final</label>
     <select id="y1"></select>
 
-    <label>Pergunta</label>
-    <select id="question"></select>
+    <label>
+      <input type="checkbox" id="advanced">
+      Ativar estatística avançada
+    </label>
 
     <button id="run">Responder</button>
     <button id="export">Baixar CSV</button>
   </aside>
 
-  <section class="content">
+  <section>
     <div class="card">
-      <h2>Resposta automática</h2>
-      <div id="answer">Selecione filtros e clique em <b>Responder</b>.</div>
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div class="card kpis">
+      <div><b>Total</b><span id="kTotal"></span></div>
+      <div><b>Média</b><span id="kMean"></span></div>
+      <div><b>Pico</b><span id="kPeak"></span></div>
+      <div id="advBox" style="display:none">
+        <b>Tendência</b><span id="kTrend"></span>
+      </div>
     </div>
 
     <div class="card">
-      <canvas id="chart"></canvas>
-      <div class="kpis">
-        <div><b>Total</b><span id="kTotal">—</span></div>
-        <div><b>Média</b><span id="kMean">—</span></div>
-        <div><b>Tendência</b><span id="kTrend">—</span></div>
-        <div><b>Significância</b><span id="kSig">—</span></div>
-      </div>
+      <div id="answer"></div>
     </div>
 
     <div class="card">
