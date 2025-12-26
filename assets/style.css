@@ -1,64 +1,60 @@
 body {
   margin:0;
   font-family: system-ui, sans-serif;
-  background:#0f172a;
-  color:#fce7f3;
+  background:#f5f7fb;
+  color:#1f2937;
 }
 
-.top {
+header {
   padding:16px;
-  background:linear-gradient(90deg,#ec4899,#db2777);
+  background:#ffffff;
+  border-bottom:1px solid #e5e7eb;
 }
 
-.layout {
+main {
   display:grid;
-  grid-template-columns:320px 1fr;
+  grid-template-columns:300px 1fr;
   gap:16px;
   padding:16px;
 }
 
-.panel {
-  background:#1e293b;
-  border-radius:14px;
+aside {
+  background:white;
   padding:16px;
+  border-radius:12px;
 }
 
-.panel select, .panel button {
+aside select, aside button {
   width:100%;
-  margin:6px 0;
+  margin:6px 0 12px;
   padding:8px;
-  border-radius:8px;
-  border:none;
 }
 
-.panel button {
-  background:#ec4899;
+aside button {
+  background:#2563eb;
   color:white;
+  border:none;
+  border-radius:8px;
   cursor:pointer;
 }
 
-.content .card {
-  background:#1e293b;
-  border-radius:14px;
+section .card {
+  background:white;
   padding:16px;
+  border-radius:12px;
   margin-bottom:16px;
-}
-
-canvas {
-  max-height:360px;
 }
 
 .kpis {
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:10px;
-  margin-top:10px;
+  gap:12px;
 }
 
 .kpis div {
-  background:#334155;
-  border-radius:10px;
+  background:#f1f5f9;
   padding:10px;
+  border-radius:8px;
   text-align:center;
 }
 
@@ -68,6 +64,6 @@ table {
 }
 
 td, th {
-  border-bottom:1px solid #475569;
+  border-bottom:1px solid #e5e7eb;
   padding:6px;
 }
