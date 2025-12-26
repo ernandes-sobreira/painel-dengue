@@ -1,8 +1,6 @@
 /* =========================================================
-   Painel Dengue — V1 (TABNET Wide → série temporal)
-   Base: Brasil / Estados / Municípios
-   Fonte: DATASUS/SINAN
-   Feito por Ernandes Sobreira
+   Painel Dengue — V1 (TABNET wide)
+   Brasil / Estados / Municípios
    ========================================================= */
 
 const FILES = {
@@ -13,7 +11,6 @@ const FILES = {
 
 const START_YEAR = 2014;
 
-// UF IBGE (2 dígitos) → sigla/nome (para mostrar MT, SP etc.)
 const UF_IBGE = {
   "11": { sigla:"RO", nome:"Rondônia" },
   "12": { sigla:"AC", nome:"Acre" },
@@ -44,40 +41,30 @@ const UF_IBGE = {
   "53": { sigla:"DF", nome:"Distrito Federal" }
 };
 
-let DB = {
-  br: null,      // { series:[{ano,casos}], years:[...]}
-  uf: null,      // { years:[...], byUf:{ "51": [{ano,casos}] }, ufs:[{uf_ibge, sigla, nome}] }
-  mun: null      // { years:[...], byUf:{ "11": { municipios:[...], byMunNome:{...} } } }
-};
-
+let DB = { br:null, uf:null, mun:null };
 let chart = null;
 
 const $ = (id) => document.getElementById(id);
-
 const fmt = (n) => new Intl.NumberFormat("pt-BR").format(Math.round(n || 0));
 
 function safeNum(v){
   if (v === null || v === undefined) return 0;
   const s = String(v).trim();
-  if (!s || s === "-" ) return 0;
-  // TABNET pode vir com ; e números sem separador
+  if (!s || s === "-") return 0;
   const cleaned = s.replace(/\./g,"").replace(",",".");
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
 
-/* ---------- Leitura robusta (TABNET / ISO-8859-1) ---------- */
 async function fetchTextISO(url){
   const res = await fetch(url, { cache:"no-store" });
   if(!res.ok) throw new Error(`Falha ao carregar: ${url}`);
   const buf = await res.arrayBuffer();
-  // preserva acentos do DATASUS
   const dec = new TextDecoder("iso-8859-1");
   return dec.decode(buf);
 }
 
 function tabnetParse(text){
-  // encontra a linha do cabeçalho real (primeira que começa com aspas)
   const lines = text.replace(/\r/g,"").split("\n");
   const idx = lines.findIndex(l => l.trim().startsWith("\""));
   const core = (idx >= 0) ? lines.slice(idx).join("\n") : text;
@@ -100,17 +87,16 @@ function detectYearColumns(obj){
     .sort((a,b)=>a-b);
 }
 
-/* ---------- Brasil (arquivo mensal com Total) ---------- */
+/* ------------------- BUILDERS ------------------- */
+
 function buildBrasil(rows){
-  // primeira coluna tem o "Ano ..." e existe coluna "Total"
   const firstCol = Object.keys(rows[0])[0];
   const years = [];
-
   const series = [];
 
   for(const r of rows){
     const rawYear = String(r[firstCol] ?? "").replace(/"/g,"").trim();
-    if(!/^\d{4}$/.test(rawYear)) continue;        // pega só 2014..2025
+    if(!/^\d{4}$/.test(rawYear)) continue;
     const ano = Number(rawYear);
     if(ano < START_YEAR) continue;
 
@@ -123,93 +109,67 @@ function buildBrasil(rows){
   return { series, years: ys };
 }
 
-/* ---------- Estados (wide: primeira coluna "UF de residência", colunas por ano) ---------- */
 function buildEstados(rows){
   const firstCol = Object.keys(rows[0])[0];
   const yearCols = detectYearColumns(rows[0]);
-
   const byUf = {};
-  const ufs = [];
 
   for(const r of rows){
     const raw = String(r[firstCol] ?? "").replace(/"/g,"").trim();
-    // Ex: "11 Rondônia" / "51 Mato Grosso"
     const m = raw.match(/^(\d{2})\s+/);
     if(!m) continue;
     const uf_ibge = m[1];
-    const info = UF_IBGE[uf_ibge];
-    if(!info) continue;
 
-    // ignora linhas estranhas se houver
-    if(raw.toLowerCase().includes("ign") || raw.toLowerCase().includes("em branco")) continue;
+    // ignora ignorados
+    const low = raw.toLowerCase();
+    if(low.includes("ign") || low.includes("em branco")) continue;
 
-    const series = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
-    byUf[uf_ibge] = series;
-
-    ufs.push({ uf_ibge, sigla: info.sigla, nome: info.nome });
-  }
-
-  // remove duplicatas e ordena por sigla
-  const ufsUniq = [];
-  const seen = new Set();
-  for(const u of ufs){
-    if(seen.has(u.uf_ibge)) continue;
-    seen.add(u.uf_ibge);
-    ufsUniq.push(u);
-  }
-  ufsUniq.sort((a,b)=>a.sigla.localeCompare(b.sigla));
-
-  return { years: yearCols, byUf, ufs: ufsUniq };
-}
-
-/* ---------- Municípios (wide: primeira coluna "Município...", colunas por ano) ---------- */
-function buildMunicipios(rows){
-  const firstCol = Object.keys(rows[0])[0];
-  const yearCols = detectYearColumns(rows[0]);
-
-  const byUf = {}; // { "11": { municipios:[{nome, ibge6}], byMunNome:{ nome: series } } }
-
-  for(const r of rows){
-    const raw = String(r[firstCol] ?? "").replace(/"/g,"").trim();
-
-    // ignora linhas tipo " MUNICIPIO IGNORADO - RO"
-    if(!/^\d{6}\s+/.test(raw)) continue;
-
-    const parts = raw.split(/\s+/);
-    const mun_ibge6 = parts[0];  // TABNET vem com 6 dígitos
-    const uf_ibge = mun_ibge6.slice(0,2);
-    const mun_nome = parts.slice(1).join(" ").trim();
-
-    // ignora ignorados/vazios
-    if(!mun_nome || mun_nome.toLowerCase().includes("ignorado") || mun_nome.toLowerCase().includes("ign")) continue;
-
-    if(!byUf[uf_ibge]){
-      byUf[uf_ibge] = { municipios: [], byMunNome: {} };
-    }
-
-    const series = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
-    byUf[uf_ibge].municipios.push({ mun_ibge6, nome: mun_nome });
-    byUf[uf_ibge].byMunNome[mun_nome] = series;
-  }
-
-  // ordenar municípios por nome em cada UF
-  for(const uf in byUf){
-    byUf[uf].municipios.sort((a,b)=>a.nome.localeCompare(b.nome));
+    byUf[uf_ibge] = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
   }
 
   return { years: yearCols, byUf };
 }
 
-/* ---------- UI ---------- */
+function buildMunicipios(rows){
+  const firstCol = Object.keys(rows[0])[0];
+  const yearCols = detectYearColumns(rows[0]);
+
+  const byUf = {}; // { "51": { municipios:[nome...], byMunNome:{ nome: series } } }
+
+  for(const r of rows){
+    const raw = String(r[firstCol] ?? "").replace(/"/g,"").trim();
+    if(!/^\d{6}\s+/.test(raw)) continue;
+
+    const parts = raw.split(/\s+/);
+    const mun_ibge6 = parts[0];
+    const uf_ibge = mun_ibge6.slice(0,2);
+    const mun_nome = parts.slice(1).join(" ").trim();
+
+    if(!mun_nome) continue;
+    const low = mun_nome.toLowerCase();
+    if(low.includes("ign") || low.includes("em branco")) continue;
+
+    if(!byUf[uf_ibge]) byUf[uf_ibge] = { municipios: [], byMunNome: {} };
+
+    const series = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
+    byUf[uf_ibge].municipios.push(mun_nome);
+    byUf[uf_ibge].byMunNome[mun_nome] = series;
+  }
+
+  for(const uf in byUf){
+    byUf[uf].municipios.sort((a,b)=>a.localeCompare(b));
+  }
+
+  return { years: yearCols, byUf };
+}
+
+/* ------------------- UI HELPERS ------------------- */
+
 function fillSelect(sel, items, placeholder="—"){
   sel.innerHTML = "";
   sel.append(new Option(placeholder, ""));
   for(const it of items){
-    if(typeof it === "string"){
-      sel.append(new Option(it, it));
-    }else{
-      sel.append(new Option(it.label, it.value));
-    }
+    sel.append(new Option(it.label, it.value));
   }
 }
 
@@ -218,61 +178,60 @@ function setupYears(years){
   const y1 = $("y1");
   y0.innerHTML = "";
   y1.innerHTML = "";
-
   years.forEach(y => {
     y0.append(new Option(String(y), String(y)));
     y1.append(new Option(String(y), String(y)));
   });
-
   y0.value = String(years[0]);
   y1.value = String(years[years.length-1]);
 }
 
-function setGeoEnabled(isUF, isMun){
-  $("uf").disabled = !isUF;
-  $("mun").disabled = !isMun;
-  if(!isUF) $("uf").value = "";
-  if(!isMun) $("mun").value = "";
+function getAvailableUfs(){
+  // ROBUSTO: usa estados se existir; senão usa municípios
+  const keysUf = Object.keys(DB.uf?.byUf || {});
+  const keysMun = Object.keys(DB.mun?.byUf || {});
+  const ufs = (keysUf.length ? keysUf : keysMun)
+    .filter(k => /^\d{2}$/.test(k))
+    .sort((a,b)=> (UF_IBGE[a]?.sigla || a).localeCompare(UF_IBGE[b]?.sigla || b));
+
+  return ufs.map(uf => {
+    const info = UF_IBGE[uf];
+    const label = info ? `${info.sigla} — ${info.nome}` : uf;
+    return { value: uf, label };
+  });
 }
 
 function updateUFOptions(){
-  // mostra UF como "MT — Mato Grosso"
-  const items = DB.uf.ufs.map(u => ({
-    value: u.uf_ibge,
-    label: `${u.sigla} — ${u.nome}`
-  }));
-  fillSelect($("uf"), items, "Selecione a UF");
+  fillSelect($("uf"), getAvailableUfs(), "Selecione a UF");
 }
 
 function updateMunOptions(){
   const uf = $("uf").value;
-  if(!uf || !DB.mun.byUf[uf]){
+  const box = DB.mun?.byUf?.[uf];
+  if(!uf || !box){
     fillSelect($("mun"), [], "Selecione o município");
     return;
   }
-  const muns = DB.mun.byUf[uf].municipios.map(m => ({ value: m.nome, label: m.nome }));
-  fillSelect($("mun"), muns, "Selecione o município");
+  const items = box.municipios.map(n => ({ value:n, label:n }));
+  fillSelect($("mun"), items, "Selecione o município");
 }
 
-/* ---------- Render ---------- */
 function renderSeries(title, series){
   const anos = series.map(d=>d.ano);
   const vals = series.map(d=>d.casos);
 
   const total = vals.reduce((a,b)=>a+b,0);
   const media = vals.length ? total/vals.length : 0;
-  const pico = vals.length ? Math.max(...vals) : 0;
+  const pico  = vals.length ? Math.max(...vals) : 0;
 
   $("kTotal").textContent = fmt(total);
   $("kMean").textContent  = fmt(media);
   $("kPeak").textContent  = fmt(pico);
 
-  // tabela
   $("table").innerHTML =
     `<tr><th>Ano</th><th>Casos</th></tr>` +
     series.map(r => `<tr><td>${r.ano}</td><td>${fmt(r.casos)}</td></tr>`).join("");
 
-  // gráfico
   if(chart) chart.destroy();
   chart = new Chart($("chart"),{
     type:"line",
@@ -289,24 +248,17 @@ function renderSeries(title, series){
     },
     options:{
       responsive:true,
-      plugins:{ legend:{ display:true } },
-      scales:{
-        y:{ ticks:{ callback:(v)=>fmt(v) } }
-      }
+      scales:{ y:{ ticks:{ callback:(v)=>fmt(v) } } }
     }
   });
 }
 
-/* ---------- Rodar análise ---------- */
+/* ------------------- RUN ------------------- */
+
 function run(){
   const layer = $("layer").value;
   const y0 = Number($("y0").value);
   const y1 = Number($("y1").value);
-
-  if(!Number.isFinite(y0) || !Number.isFinite(y1)){
-    alert("Selecione ano inicial e final.");
-    return;
-  }
 
   if(layer === "br"){
     const s = DB.br.series.filter(d => d.ano>=y0 && d.ano<=y1);
@@ -316,23 +268,19 @@ function run(){
 
   if(layer === "uf"){
     const uf = $("uf").value;
-    if(!uf){
-      alert("Selecione a UF.");
-      return;
-    }
+    if(!uf){ alert("Selecione a UF."); return; }
     const info = UF_IBGE[uf];
     const sAll = DB.uf.byUf[uf] || [];
     const s = sAll.filter(d => d.ano>=y0 && d.ano<=y1);
-    renderSeries(`Casos (${info.sigla})`, s);
+    renderSeries(`Casos (${info?.sigla || uf})`, s);
     return;
   }
 
   if(layer === "mun"){
     const uf = $("uf").value;
     const mun = $("mun").value;
-    if(!uf) { alert("Selecione a UF."); return; }
-    if(!mun) { alert("Selecione o município."); return; }
-
+    if(!uf){ alert("Selecione a UF."); return; }
+    if(!mun){ alert("Selecione o município."); return; }
     const sAll = DB.mun.byUf[uf]?.byMunNome?.[mun] || [];
     const s = sAll.filter(d => d.ano>=y0 && d.ano<=y1);
     renderSeries(`Casos (${mun})`, s);
@@ -340,30 +288,33 @@ function run(){
   }
 }
 
-/* ---------- Eventos ---------- */
 function onLayerChange(){
   const layer = $("layer").value;
 
   if(layer === "br"){
-    setGeoEnabled(false, false);
+    $("uf").disabled = true;
+    $("mun").disabled = true;
     setupYears(DB.br.years);
   }
 
   if(layer === "uf"){
-    setGeoEnabled(true, false);
+    $("uf").disabled = false;
+    $("mun").disabled = true;
     updateUFOptions();
     setupYears(DB.uf.years);
   }
 
   if(layer === "mun"){
-    setGeoEnabled(true, true);
+    $("uf").disabled = false;
+    $("mun").disabled = false;
     updateUFOptions();
     setupYears(DB.mun.years);
     updateMunOptions();
   }
 }
 
-/* ---------- Boot ---------- */
+/* ------------------- BOOT ------------------- */
+
 async function init(){
   try{
     const brRaw  = tabnetParse(await fetchTextISO(FILES.br));
@@ -374,21 +325,17 @@ async function init(){
     DB.uf  = buildEstados(ufRaw);
     DB.mun = buildMunicipios(munRaw);
 
-    // eventos
     $("layer").addEventListener("change", onLayerChange);
     $("uf").addEventListener("change", () => {
       if($("layer").value === "mun") updateMunOptions();
     });
     $("run").addEventListener("click", run);
 
-    // inicia em Brasil
     onLayerChange();
-    // roda automaticamente no carregamento (Brasil)
     run();
-
   }catch(err){
     console.error(err);
-    alert("Erro ao carregar dados. Abra o Console (F12) e veja o erro.");
+    alert("Erro ao carregar dados. Abra o Console (F12) e me envie o erro.");
   }
 }
 
