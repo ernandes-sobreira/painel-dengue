@@ -1,1 +1,12 @@
+{
+  "name": "Painel Dengue",
+  "short_name": "Painel Dengue",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#071018",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
 
