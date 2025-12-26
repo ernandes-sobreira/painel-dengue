@@ -1,5 +1,34 @@
 // Painel Dengue — Ernandes Sobreira
 // Fonte: DATASUS/SINAN (TABNET) — Leitura de CSV "cru" + análises (2014+)
+const UF_IBGE = {
+  "11": { sigla:"RO", nome:"Rondônia" },
+  "12": { sigla:"AC", nome:"Acre" },
+  "13": { sigla:"AM", nome:"Amazonas" },
+  "14": { sigla:"RR", nome:"Roraima" },
+  "15": { sigla:"PA", nome:"Pará" },
+  "16": { sigla:"AP", nome:"Amapá" },
+  "17": { sigla:"TO", nome:"Tocantins" },
+  "21": { sigla:"MA", nome:"Maranhão" },
+  "22": { sigla:"PI", nome:"Piauí" },
+  "23": { sigla:"CE", nome:"Ceará" },
+  "24": { sigla:"RN", nome:"Rio Grande do Norte" },
+  "25": { sigla:"PB", nome:"Paraíba" },
+  "26": { sigla:"PE", nome:"Pernambuco" },
+  "27": { sigla:"AL", nome:"Alagoas" },
+  "28": { sigla:"SE", nome:"Sergipe" },
+  "29": { sigla:"BA", nome:"Bahia" },
+  "31": { sigla:"MG", nome:"Minas Gerais" },
+  "32": { sigla:"ES", nome:"Espírito Santo" },
+  "33": { sigla:"RJ", nome:"Rio de Janeiro" },
+  "35": { sigla:"SP", nome:"São Paulo" },
+  "41": { sigla:"PR", nome:"Paraná" },
+  "42": { sigla:"SC", nome:"Santa Catarina" },
+  "43": { sigla:"RS", nome:"Rio Grande do Sul" },
+  "50": { sigla:"MS", nome:"Mato Grosso do Sul" },
+  "51": { sigla:"MT", nome:"Mato Grosso" },
+  "52": { sigla:"GO", nome:"Goiás" },
+  "53": { sigla:"DF", nome:"Distrito Federal" }
+};
 
 const $ = (id)=>document.getElementById(id);
 
@@ -313,21 +342,54 @@ function buildUF(rows){
 }
 
 function buildMunicipios(rows){
-  // primeira coluna municipio, outras colunas anos
   const cols = Object.keys(rows[0]);
   const colMun = cols[0];
-  const yearCols = cols.filter(c => /^\d{4}$/.test(c)).map(Number).filter(y=>y>=2014);
+  const yearCols = cols
+    .filter(c => /^\d{4}$/.test(c))
+    .map(Number)
+    .filter(y => y >= 2014);
 
-  // município vem com código + nome (ex: "110001 ALTA FLORESTA D'OESTE")
-  // UF não vem separado aqui; então UF será extraída do código IBGE (2 primeiros dígitos = UF numérica),
-  // mas como o usuário quer por UF nominal, manteremos o filtro por "UF numérica" e por "texto"
-  // (Sem base extra para mapear número->sigla, então exibimos como "11", "12"... e opcionalmente você pode depois mapear.)
-  function ufFromIBGE(m){
-    const m2 = m.trim().replace(/"/g,"");
-    const code = m2.split(" ")[0];
-    const ufNum = code && /^\d{6}/.test(code) ? code.slice(0,2) : "";
-    return ufNum || "??";
-  }
+  const out = [];
+
+  rows.forEach(r=>{
+    const raw = String(r[colMun] ?? "").replace(/"/g,"").trim();
+    if (!raw || raw.toLowerCase().includes("ign")) return;
+
+    // Ex: "5102504 CÁCERES"
+    const parts = raw.split(" ");
+    const mun_ibge = parts[0];
+
+    if (!/^\d{7}$/.test(mun_ibge)) return;
+
+    const mun_nome = parts.slice(1).join(" ").trim();
+    const uf_ibge = mun_ibge.slice(0,2);
+    const uf_info = UF_IBGE[uf_ibge] || { sigla:"??", nome:"Desconhecido" };
+
+    yearCols.forEach(ano=>{
+      out.push({
+        ano,
+        casos: safeNum(r[String(ano)]),
+
+        // município
+        mun_ibge,
+        municipio: mun_nome,
+
+        // estado
+        uf_ibge,
+        uf_sigla: uf_info.sigla,
+        uf_nome: uf_info.nome
+      });
+    });
+  });
+
+  return {
+    out,
+    ufs: [...new Set(out.map(d => d.uf_sigla))].sort(),
+    municipios: [...new Set(out.map(d => d.municipio))].sort(),
+    years: yearCols.sort((a,b)=>a-b)
+  };
+
+}
 
   const out = [];
   rows.forEach(r=>{
