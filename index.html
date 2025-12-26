@@ -3,8 +3,15 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Dengue Brasil — Dashboard</title>
+
+  <title>Painel Dengue — DATASUS (2014+)</title>
   <meta name="theme-color" content="#0ea5e9"/>
+  <meta name="description" content="Painel Dengue: análises e tendências (2014+) por Brasil/UF/Município e perfil (sexo, raça, escolaridade, faixa etária). Fonte: DATASUS. Feito por Ernandes Sobreira."/>
+
+  <!-- Ícone (você sobe depois como icon.png) -->
+  <link rel="icon" href="icon.png"/>
+  <link rel="apple-touch-icon" href="icon.png"/>
+  <link rel="manifest" href="manifest.json"/>
 
   <link rel="stylesheet" href="assets/style.css"/>
 
@@ -13,115 +20,151 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
   <header class="top">
     <div class="brand">
       <div class="logo">🦟</div>
       <div>
-        <h1>Dengue Brasil</h1>
-        <p class="muted">Brasil → UF → Município (dados DATASUS em CSV)</p>
+        <h1>Painel Dengue</h1>
+        <p class="muted">Análises e tendências (2014+) • Fonte: DATASUS/SINAN • Feito por <b>Ernandes Sobreira</b></p>
       </div>
     </div>
 
     <div class="actions">
-      <label class="fileBtn">
-        <input id="fileInput" type="file" accept=".csv,text/csv"/>
-        Carregar CSV
-      </label>
-      <button id="btnUseDefault" class="ghost" title="Usa data/dengue.csv do repositório">Usar CSV do repositório</button>
+      <button id="btnReload" class="ghost" title="Recarrega os CSVs da pasta /data">Recarregar dados</button>
+      <button id="btnExportView" class="ghost" title="Baixa o que está sendo exibido (tabela da visão atual)">Baixar visão (CSV)</button>
     </div>
   </header>
 
-  <main class="grid">
-    <section class="card">
-      <h2>Filtros</h2>
+  <main class="layout">
+    <aside class="card">
+      <h2>Objetivo</h2>
+      <p class="muted">
+        Este painel apoia <b>políticas públicas locais</b> ao responder perguntas práticas:
+        <b>onde</b> os casos se concentram, <b>quem</b> é mais afetado, <b>quando</b> ocorre o pico e se o cenário está
+        <b>crescendo ou diminuindo</b> no tempo.
+      </p>
 
+      <h2>Como usar</h2>
+      <ol class="muted">
+        <li>Escolha a <b>camada</b> (Brasil/UF/Município ou Perfil).</li>
+        <li>Defina o <b>período</b> (2014+).</li>
+        <li>Selecione uma <b>pergunta</b> e veja <b>gráficos + resposta</b>.</li>
+      </ol>
+
+      <div class="sep"></div>
+
+      <h2>Camada</h2>
       <div class="row">
-        <div class="field">
-          <label>Escala</label>
-          <select id="scale">
-            <option value="br" selected>Brasil</option>
-            <option value="uf">Estado (UF)</option>
-            <option value="mun">Município</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>UF</label>
-          <select id="uf" disabled></select>
-        </div>
-
-        <div class="field">
-          <label>Município</label>
-          <select id="mun" disabled></select>
-        </div>
+        <select id="layer">
+          <option value="br">Brasil (mês do 1º sintoma)</option>
+          <option value="uf">Estados (UF — ano)</option>
+          <option value="mun">Municípios (ano)</option>
+          <option value="sexo">Perfil: Sexo (ano)</option>
+          <option value="raca">Perfil: Raça/Cor (ano)</option>
+          <option value="esc">Perfil: Escolaridade (ano)</option>
+          <option value="faixa">Perfil: Faixa etária (mês)</option>
+        </select>
       </div>
 
-      <div class="row">
-        <div class="field">
-          <label>Período (Ano)</label>
-          <div class="range">
-            <select id="anoIni"></select>
-            <span class="muted">até</span>
-            <select id="anoFim"></select>
+      <div id="geoFilters" class="block">
+        <div class="row">
+          <div class="field">
+            <label>UF</label>
+            <select id="uf" disabled></select>
+          </div>
+          <div class="field">
+            <label>Município</label>
+            <select id="mun" disabled></select>
           </div>
         </div>
+      </div>
 
-        <div class="field">
-          <label>Visualização</label>
-          <select id="metric">
-            <option value="casos" selected>Casos (soma no ano)</option>
-          </select>
+      <div class="block">
+        <div class="row">
+          <div class="field">
+            <label>Ano inicial</label>
+            <select id="y0"></select>
+          </div>
+          <div class="field">
+            <label>Ano final</label>
+            <select id="y1"></select>
+          </div>
         </div>
+      </div>
+
+      <div id="profileFilters" class="block" style="display:none">
+        <div class="row">
+          <div class="field">
+            <label>Categoria (coluna)</label>
+            <select id="cat"></select>
+          </div>
+        </div>
+      </div>
+
+      <h2>Pergunta</h2>
+      <div class="row">
+        <select id="question"></select>
       </div>
 
       <div class="row">
-        <button id="btnApply">Aplicar</button>
-        <button id="btnExport" class="ghost">Baixar CSV filtrado</button>
+        <button id="btnRun">Responder</button>
       </div>
 
-      <p id="status" class="hint">Carregue um CSV (ou use o do repositório).</p>
-      <details class="help">
-        <summary>Formato esperado do CSV</summary>
-        <pre>ano,uf,municipio,casos</pre>
-        <p class="muted">As colunas devem ter esses nomes. O app ignora colunas extras.</p>
-      </details>
-    </section>
+      <p id="status" class="hint">Carregando dados…</p>
+    </aside>
 
-    <section class="card">
-      <h2>Série temporal</h2>
-      <canvas id="chart" height="130"></canvas>
-      <div class="kpis">
-        <div class="kpi">
-          <div class="kpiLabel">Total no período</div>
-          <div id="kpiTotal" class="kpiValue">—</div>
+    <section class="content">
+      <section class="card">
+        <h2>Resposta automática</h2>
+        <div id="answer" class="answer">
+          <div class="muted">Selecione a camada, o período e a pergunta. Depois clique em <b>Responder</b>.</div>
         </div>
-        <div class="kpi">
-          <div class="kpiLabel">Pico anual</div>
-          <div id="kpiPeak" class="kpiValue">—</div>
-        </div>
-        <div class="kpi">
-          <div class="kpiLabel">Média anual</div>
-          <div id="kpiMean" class="kpiValue">—</div>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card">
-      <h2>Tabela (por ano)</h2>
-      <div class="tableWrap">
-        <table id="table">
-          <thead>
-            <tr><th>Ano</th><th>Casos</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <section class="card">
+        <h2>Gráfico</h2>
+        <div class="chartWrap">
+          <canvas id="chart" height="140"></canvas>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="kpiLabel">Total no período</div>
+            <div id="kpiTotal" class="kpiValue">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpiLabel">Média</div>
+            <div id="kpiMean" class="kpiValue">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpiLabel">Pico</div>
+            <div id="kpiPeak" class="kpiValue">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpiLabel">Tendência</div>
+            <div id="kpiTrend" class="kpiValue">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Tabela (visão atual)</h2>
+        <div class="tableWrap">
+          <table id="table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
   <footer class="foot muted">
-    <span>Feito para rodar no GitHub Pages • CSV local (sem servidor)</span>
+    <span>
+      Fonte: DATASUS/SINAN (TABNET) • Período analisado: 2014+ • Painel Dengue — Ernandes Sobreira
+    </span>
   </footer>
 
   <script src="assets/app.js"></script>
