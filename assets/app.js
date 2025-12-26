@@ -1,6 +1,6 @@
 /* =========================================================
    Painel Dengue — BASICÃO FUNCIONAL (TABNET real)
-   Brasil / Estados / Municípios com nomes
+   Brasil / Estados / Municípios com nomes (2014+)
    ========================================================= */
 
 const CACHE = `?v=${Date.now()}`;
@@ -27,24 +27,20 @@ const $ = (id) => document.getElementById(id);
 const fmt = (n) => new Intl.NumberFormat("pt-BR").format(Math.round(n || 0));
 
 function safeNum(v){
-  if (v == null) return 0;
-  const s = String(v).trim();
+  const s = String(v ?? "").trim();
   if (!s || s === "-") return 0;
   const n = Number(s.replace(/\./g,"").replace(",","."));
   return Number.isFinite(n) ? n : 0;
 }
 
-// Acha a linha do cabeçalho (a primeira que tem ano e separador ;)
 function findHeaderLineIndex(lines){
   for(let i=0;i<lines.length;i++){
-    const l = lines[i];
-    if (!l) continue;
-    if (l.includes(";") && l.match(/;2014;|;2015;|;2016;/)) return i;
+    const l = lines[i] || "";
+    if (l.includes(";") && (l.includes(";2014;") || l.includes(";2015;") || l.includes(";2016;"))) return i;
   }
   return -1;
 }
 
-// Parse TABNET wide: retorna {headers, rows} (rows = arrays de colunas)
 function parseTabnetWide(text){
   const lines = text.replace(/\r/g,"").split("\n");
   const hi = findHeaderLineIndex(lines);
@@ -71,25 +67,23 @@ function yearCols(headers){
     .sort((a,b)=>a-b);
 }
 
-async function fetchTextISO(url){
+async function fetchText(url){
   const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`Falha ao carregar: ${url} (${res.status})`);
-  const buf = await res.arrayBuffer();
-  return new TextDecoder("iso-8859-1").decode(buf);
+  if(!res.ok) throw new Error(`Falha ao carregar ${url} (${res.status})`);
+  return await res.text();
 }
 
-// ---------- builders ----------
 function buildEstados(parsed){
   const { headers, rows } = parsed;
   const years = yearCols(headers);
-  const byUf = {};
-
   const idxByYear = Object.fromEntries(years.map(y => [y, headers.indexOf(String(y))]));
+  const byUf = {};
 
   for(const cols of rows){
     const raw = cols[0] || "";
     const m = raw.match(/^(\d{2})\s+/); // "51 Mato Grosso"
     if(!m) continue;
+
     const uf = m[1];
     if(!UF_IBGE[uf]) continue;
     if(raw.toLowerCase().includes("ign")) continue;
@@ -103,22 +97,21 @@ function buildEstados(parsed){
 function buildMunicipios(parsed){
   const { headers, rows } = parsed;
   const years = yearCols(headers);
-  const byUf = {};
   const idxByYear = Object.fromEntries(years.map(y => [y, headers.indexOf(String(y))]));
+  const byUf = {};
 
   for(const cols of rows){
     const raw = cols[0] || "";
     if(raw.toLowerCase().includes("ign")) continue;
 
-    // "110001 ALTA FLORESTA D'OESTE" (às vezes vem 6 dígitos)
     const m = raw.match(/^(\d{6})\s+(.*)$/);
     if(!m) continue;
 
     const ibge6 = m[1];
     const uf = ibge6.slice(0,2);
     const nome = m[2].trim();
-
     if(!UF_IBGE[uf]) continue;
+
     if(!byUf[uf]) byUf[uf] = { municipios: [], byMunNome: {} };
 
     const series = years.map(y => ({ ano:y, casos: safeNum(cols[idxByYear[y]]) }));
@@ -134,9 +127,7 @@ function buildMunicipios(parsed){
 }
 
 function buildBrasil(parsed){
-  // Brasil geralmente vem como "Ano ..." + coluna "Total"
   const { headers, rows } = parsed;
-  const first = headers[0];
   const totalIdx = headers.findIndex(h => h.toLowerCase() === "total");
   if(totalIdx < 0) throw new Error("Não achei a coluna Total no arquivo do Brasil.");
 
@@ -148,15 +139,18 @@ function buildBrasil(parsed){
     if(ano < START_YEAR) continue;
     series.push({ ano, casos: safeNum(cols[totalIdx]) });
   }
-  const years = series.map(d=>d.ano).sort((a,b)=>a-b);
+
+  series.sort((a,b)=>a.ano-b.ano);
+  const years = series.map(d=>d.ano);
   return { years, series };
 }
 
-// ---------- UI ----------
 function fillSelect(sel, items, placeholder){
   sel.innerHTML = "";
   sel.append(new Option(placeholder, ""));
-  items.forEach(it => sel.append(new Option(it.label, it.value)));
+  for(const it of items){
+    sel.append(new Option(it.label, it.value));
+  }
 }
 
 function setupYears(years){
@@ -285,9 +279,9 @@ function onLayerChange(){
 
 async function init(){
   try{
-    const br = parseTabnetWide(await fetchTextISO(FILES.br));
-    const uf = parseTabnetWide(await fetchTextISO(FILES.uf));
-    const mun = parseTabnetWide(await fetchTextISO(FILES.mun));
+    const br = parseTabnetWide(await fetchText(FILES.br));
+    const uf = parseTabnetWide(await fetchText(FILES.uf));
+    const mun = parseTabnetWide(await fetchText(FILES.mun));
 
     DB.br  = buildBrasil(br);
     DB.uf  = buildEstados(uf);
@@ -299,9 +293,7 @@ async function init(){
     });
     $("run").addEventListener("click", run);
 
-    // INICIA em Brasil
     onLayerChange();
-
   }catch(e){
     console.error(e);
     alert("Erro ao carregar dados. Abra o Console (F12) e copie o erro.");
