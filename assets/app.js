@@ -1,16 +1,13 @@
-/* =========================================================
-   Painel Dengue — BASICÃO FUNCIONAL (TABNET real)
-   Brasil / Estados / Municípios com nomes (2014+)
-   ========================================================= */
-
-const CACHE = `?v=${Date.now()}`;
-const FILES = {
-  br:  `assets/data/dados-dengue.csv${CACHE}`,
-  uf:  `assets/data/dados-dengue-estados.csv${CACHE}`,
-  mun: `assets/data/dados-dengue-municipios.csv${CACHE}`,
-};
+/* Painel Dengue — base robusta (TABNET Latin-1 + cabeçalho com aspas) */
 
 const START_YEAR = 2014;
+
+// seus arquivos no GitHub (como está no print)
+const FILES = {
+  br:  "assets/data/dados-dengue.csv",
+  uf:  "assets/data/dados-dengue-estados.csv",
+  mun: "assets/data/dados-dengue-municipios.csv",
+};
 
 const UF_IBGE = {
   "11":"RO","12":"AC","13":"AM","14":"RR","15":"PA","16":"AP","17":"TO",
@@ -20,11 +17,11 @@ const UF_IBGE = {
   "50":"MS","51":"MT","52":"GO","53":"DF"
 };
 
-let DB = { br:null, uf:null, mun:null };
-let chart = null;
-
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => new Intl.NumberFormat("pt-BR").format(Math.round(n || 0));
+
+let DB = { br:null, uf:null, mun:null };
+let chart = null;
 
 function safeNum(v){
   const s = String(v ?? "").trim();
@@ -33,33 +30,46 @@ function safeNum(v){
   return Number.isFinite(n) ? n : 0;
 }
 
-function findHeaderLineIndex(lines){
+// Lê CSV do GitHub Pages corretamente em Latin-1
+async function fetchLatin1(url){
+  const res = await fetch(url, { cache:"no-store" });
+  if(!res.ok) throw new Error(`Falha ao carregar ${url} (${res.status})`);
+  const buf = await res.arrayBuffer();
+  return new TextDecoder("latin1").decode(buf);
+}
+
+// acha a linha do cabeçalho mesmo com aspas
+function findHeader(lines){
   for(let i=0;i<lines.length;i++){
-    const l = lines[i] || "";
-    if (l.includes(";") && (l.includes(";2014;") || l.includes(";2015;") || l.includes(";2016;"))) return i;
+    const clean = (lines[i]||"").replace(/"/g,"").trim();
+    if(
+      clean.includes(";2014;") && clean.toLowerCase().includes("total")
+    ) return i;
+    // caso Brasil (mês): cabeçalho tem "Total" e "Jan"
+    if(
+      clean.toLowerCase().includes("total") &&
+      (clean.toLowerCase().includes("jan") || clean.toLowerCase().includes("fev")) &&
+      clean.toLowerCase().includes("ano")
+    ) return i;
   }
   return -1;
 }
 
-function parseTabnetWide(text){
-  const lines = text.replace(/\r/g,"").split("\n");
-  const hi = findHeaderLineIndex(lines);
-  if(hi < 0) throw new Error("Não achei o cabeçalho com anos no arquivo.");
+function parseTabnet(text){
+  const lines = text.replace(/\r/g,"").split("\n").filter(l=>l.trim().length);
+  const hi = findHeader(lines);
+  if(hi < 0) throw new Error("Não encontrei o cabeçalho do TABNET (linha com anos/Total).");
 
   const headers = lines[hi].split(";").map(x => x.replace(/"/g,"").trim());
   const rows = [];
-
   for(let i=hi+1;i<lines.length;i++){
-    const line = lines[i];
-    if(!line || !line.trim()) continue;
-    const cols = line.split(";").map(x => x.replace(/"/g,"").trim());
+    const cols = lines[i].split(";").map(x => x.replace(/"/g,"").trim());
     rows.push(cols);
   }
-
   return { headers, rows };
 }
 
-function yearCols(headers){
+function yearsFromHeaders(headers){
   return headers
     .filter(h => /^\d{4}$/.test(h))
     .map(Number)
@@ -67,41 +77,50 @@ function yearCols(headers){
     .sort((a,b)=>a-b);
 }
 
-async function fetchText(url){
-  const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`Falha ao carregar ${url} (${res.status})`);
-  return await res.text();
+function buildBrasil(parsed){
+  const { headers, rows } = parsed;
+  const totalIdx = headers.findIndex(h => h.toLowerCase() === "total");
+  if(totalIdx < 0) throw new Error("Brasil: não achei coluna Total.");
+
+  const series = [];
+  for(const cols of rows){
+    const y = String(cols[0]||"").trim().replace(/"/g,"");
+    if(!/^\d{4}$/.test(y)) continue;
+    const ano = Number(y);
+    if(ano < START_YEAR) continue;
+    series.push({ ano, casos: safeNum(cols[totalIdx]) });
+  }
+  series.sort((a,b)=>a.ano-b.ano);
+  return { years: series.map(d=>d.ano), series };
 }
 
 function buildEstados(parsed){
   const { headers, rows } = parsed;
-  const years = yearCols(headers);
-  const idxByYear = Object.fromEntries(years.map(y => [y, headers.indexOf(String(y))]));
+  const years = yearsFromHeaders(headers);
+  const idx = Object.fromEntries(years.map(y => [y, headers.indexOf(String(y))]));
   const byUf = {};
 
   for(const cols of rows){
-    const raw = cols[0] || "";
-    const m = raw.match(/^(\d{2})\s+/); // "51 Mato Grosso"
+    const raw = (cols[0]||"").replace(/"/g,"").trim(); // "51 Mato Grosso"
+    const m = raw.match(/^(\d{2})\s+/);
     if(!m) continue;
-
     const uf = m[1];
     if(!UF_IBGE[uf]) continue;
     if(raw.toLowerCase().includes("ign")) continue;
 
-    byUf[uf] = years.map(y => ({ ano:y, casos: safeNum(cols[idxByYear[y]]) }));
+    byUf[uf] = years.map(y => ({ ano:y, casos: safeNum(cols[idx[y]]) }));
   }
-
   return { years, byUf };
 }
 
 function buildMunicipios(parsed){
   const { headers, rows } = parsed;
-  const years = yearCols(headers);
-  const idxByYear = Object.fromEntries(years.map(y => [y, headers.indexOf(String(y))]));
+  const years = yearsFromHeaders(headers);
+  const idx = Object.fromEntries(years.map(y => [y, headers.indexOf(String(y))]));
   const byUf = {};
 
   for(const cols of rows){
-    const raw = cols[0] || "";
+    const raw = (cols[0]||"").replace(/"/g,"").trim(); // "110001 ALTA FLORESTA D'OESTE"
     if(raw.toLowerCase().includes("ign")) continue;
 
     const m = raw.match(/^(\d{6})\s+(.*)$/);
@@ -112,51 +131,29 @@ function buildMunicipios(parsed){
     const nome = m[2].trim();
     if(!UF_IBGE[uf]) continue;
 
-    if(!byUf[uf]) byUf[uf] = { municipios: [], byMunNome: {} };
+    if(!byUf[uf]) byUf[uf] = { municipios: [], seriesByName: {} };
 
-    const series = years.map(y => ({ ano:y, casos: safeNum(cols[idxByYear[y]]) }));
+    const series = years.map(y => ({ ano:y, casos: safeNum(cols[idx[y]]) }));
     byUf[uf].municipios.push(nome);
-    byUf[uf].byMunNome[nome] = series;
+    byUf[uf].seriesByName[nome] = series;
   }
 
   for(const uf in byUf){
     byUf[uf].municipios.sort((a,b)=>a.localeCompare(b));
   }
-
   return { years, byUf };
-}
-
-function buildBrasil(parsed){
-  const { headers, rows } = parsed;
-  const totalIdx = headers.findIndex(h => h.toLowerCase() === "total");
-  if(totalIdx < 0) throw new Error("Não achei a coluna Total no arquivo do Brasil.");
-
-  const series = [];
-  for(const cols of rows){
-    const y = String(cols[0]||"").trim();
-    if(!/^\d{4}$/.test(y)) continue;
-    const ano = Number(y);
-    if(ano < START_YEAR) continue;
-    series.push({ ano, casos: safeNum(cols[totalIdx]) });
-  }
-
-  series.sort((a,b)=>a.ano-b.ano);
-  const years = series.map(d=>d.ano);
-  return { years, series };
 }
 
 function fillSelect(sel, items, placeholder){
   sel.innerHTML = "";
   sel.append(new Option(placeholder, ""));
-  for(const it of items){
-    sel.append(new Option(it.label, it.value));
-  }
+  for(const it of items) sel.append(new Option(it.label, it.value));
 }
 
 function setupYears(years){
   $("y0").innerHTML = "";
   $("y1").innerHTML = "";
-  years.forEach(y => {
+  years.forEach(y=>{
     $("y0").add(new Option(String(y), String(y)));
     $("y1").add(new Option(String(y), String(y)));
   });
@@ -167,13 +164,11 @@ function setupYears(years){
 function updateUFOptions(){
   const layer = $("layer").value;
   let ufs = [];
-
   if(layer === "uf") ufs = Object.keys(DB.uf.byUf);
   if(layer === "mun") ufs = Object.keys(DB.mun.byUf);
 
   ufs.sort((a,b)=>UF_IBGE[a].localeCompare(UF_IBGE[b]));
-  const items = ufs.map(code => ({ value: code, label: UF_IBGE[code] }));
-  fillSelect($("uf"), items, "Selecione a UF");
+  fillSelect($("uf"), ufs.map(code=>({value:code,label:UF_IBGE[code]})), "Selecione a UF");
 }
 
 function updateMunOptions(){
@@ -183,8 +178,7 @@ function updateMunOptions(){
     fillSelect($("mun"), [], "Selecione o município");
     return;
   }
-  const items = box.municipios.map(n => ({ value:n, label:n }));
-  fillSelect($("mun"), items, "Selecione o município");
+  fillSelect($("mun"), box.municipios.map(n=>({value:n,label:n})), "Selecione o município");
 }
 
 function renderSeries(title, series){
@@ -192,16 +186,16 @@ function renderSeries(title, series){
   const vals = series.map(d=>d.casos);
 
   const total = vals.reduce((a,b)=>a+b,0);
-  const media = vals.length ? total/vals.length : 0;
-  const pico  = vals.length ? Math.max(...vals) : 0;
+  const mean = vals.length ? total/vals.length : 0;
+  const peak = vals.length ? Math.max(...vals) : 0;
 
   $("kTotal").textContent = fmt(total);
-  $("kMean").textContent  = fmt(media);
-  $("kPeak").textContent  = fmt(pico);
+  $("kMean").textContent  = fmt(mean);
+  $("kPeak").textContent  = fmt(peak);
 
   $("table").innerHTML =
     `<tr><th>Ano</th><th>Casos</th></tr>` +
-    series.map(r => `<tr><td>${r.ano}</td><td>${fmt(r.casos)}</td></tr>`).join("");
+    series.map(r=>`<tr><td>${r.ano}</td><td>${fmt(r.casos)}</td></tr>`).join("");
 
   if(chart) chart.destroy();
   chart = new Chart($("chart"),{
@@ -209,10 +203,10 @@ function renderSeries(title, series){
     data:{
       labels: anos,
       datasets:[{
-        label: title,
+        label:title,
         data: vals,
         borderColor:"#ec4899",
-        backgroundColor:"rgba(236,72,153,0.18)",
+        backgroundColor:"rgba(236,72,153,0.14)",
         tension:0.25,
         pointRadius:3
       }]
@@ -227,17 +221,15 @@ function run(){
   const y1 = Number($("y1").value);
 
   if(layer === "br"){
-    const s = DB.br.series.filter(d => d.ano>=y0 && d.ano<=y1);
-    renderSeries("Casos (Brasil)", s);
-    return;
+    const s = DB.br.series.filter(d=>d.ano>=y0 && d.ano<=y1);
+    return renderSeries("Casos (Brasil)", s);
   }
 
   if(layer === "uf"){
     const uf = $("uf").value;
     if(!uf) return alert("Selecione a UF.");
-    const s = (DB.uf.byUf[uf] || []).filter(d => d.ano>=y0 && d.ano<=y1);
-    renderSeries(`Casos (${UF_IBGE[uf]})`, s);
-    return;
+    const s = (DB.uf.byUf[uf]||[]).filter(d=>d.ano>=y0 && d.ano<=y1);
+    return renderSeries(`Casos (${UF_IBGE[uf]})`, s);
   }
 
   if(layer === "mun"){
@@ -245,9 +237,8 @@ function run(){
     const mun = $("mun").value;
     if(!uf) return alert("Selecione a UF.");
     if(!mun) return alert("Selecione o município.");
-    const s = (DB.mun.byUf[uf]?.byMunNome?.[mun] || []).filter(d => d.ano>=y0 && d.ano<=y1);
-    renderSeries(`Casos (${mun} - ${UF_IBGE[uf]})`, s);
-    return;
+    const s = (DB.mun.byUf[uf]?.seriesByName?.[mun]||[]).filter(d=>d.ano>=y0 && d.ano<=y1);
+    return renderSeries(`Casos (${mun} - ${UF_IBGE[uf]})`, s);
   }
 }
 
@@ -279,18 +270,19 @@ function onLayerChange(){
 
 async function init(){
   try{
-    const br = parseTabnetWide(await fetchText(FILES.br));
-    const uf = parseTabnetWide(await fetchText(FILES.uf));
-    const mun = parseTabnetWide(await fetchText(FILES.mun));
+    // checagem simples: se der 404 aqui, é caminho/Pages
+    const [tBr,tUf,tMun] = await Promise.all([
+      fetchLatin1(FILES.br),
+      fetchLatin1(FILES.uf),
+      fetchLatin1(FILES.mun),
+    ]);
 
-    DB.br  = buildBrasil(br);
-    DB.uf  = buildEstados(uf);
-    DB.mun = buildMunicipios(mun);
+    DB.br  = buildBrasil(parseTabnet(tBr));
+    DB.uf  = buildEstados(parseTabnet(tUf));
+    DB.mun = buildMunicipios(parseTabnet(tMun));
 
     $("layer").addEventListener("change", onLayerChange);
-    $("uf").addEventListener("change", () => {
-      if($("layer").value === "mun") updateMunOptions();
-    });
+    $("uf").addEventListener("change", ()=> $("layer").value==="mun" && updateMunOptions());
     $("run").addEventListener("click", run);
 
     onLayerChange();
@@ -300,4 +292,4 @@ async function init(){
   }
 }
 
-init();
+document.addEventListener("DOMContentLoaded", init);
