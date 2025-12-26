@@ -1,65 +1,92 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Painel Dengue</title>
 
-  <link rel="icon" href="icon.png">
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="icon.png"/>
 
-  <link rel="stylesheet" href="assets/style.css">
+  <!-- Chart.js (obrigatório pro gráfico) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
+  <header class="top">
+    <h1>Painel Dengue</h1>
+    <p class="sub">Análises epidemiológicas (2014+) • DATASUS/SINAN • Ernandes Sobreira</p>
+  </header>
 
-<header>
-  <h1>Painel Dengue</h1>
-  <p>Análises epidemiológicas (2014+) • DATASUS/SINAN • Ernandes Sobreira</p>
-</header>
+  <main class="grid">
+    <aside class="card controls">
+      <div class="field">
+        <label>Camada</label>
+        <select id="layer">
+          <option value="br" selected>Brasil</option>
+          <option value="uf">Estados</option>
+          <option value="mun">Municípios</option>
+        </select>
+      </div>
 
-<main>
-  <aside>
-    <label>Camada</label>
-    <select id="layer">
-      <option value="br">Brasil</option>
-      <option value="uf">Estados</option>
-      <option value="mun">Municípios</option>
-    </select>
+      <div class="field">
+        <label>UF</label>
+        <select id="uf" disabled>
+          <option value="">Selecione a UF</option>
+        </select>
+      </div>
 
-    <label>UF</label>
-    <select id="uf"></select>
+      <div class="field">
+        <label>Município</label>
+        <select id="mun" disabled>
+          <option value="">Selecione o município</option>
+        </select>
+      </div>
 
-    <label>Município</label>
-    <select id="mun"></select>
+      <div class="field">
+        <label>Ano inicial</label>
+        <select id="y0"></select>
+      </div>
 
-    <label>Ano inicial</label>
-    <select id="y0"></select>
+      <div class="field">
+        <label>Ano final</label>
+        <select id="y1"></select>
+      </div>
 
-    <label>Ano final</label>
-    <select id="y1"></select>
+      <button id="run" class="btn">Responder</button>
 
-    <button id="run">Responder</button>
-  </aside>
+      <div class="hint">
+        <strong>Como usar</strong>
+        <ol>
+          <li>Escolha Brasil/Estados/Municípios</li>
+          <li>Se for Estado/Município, selecione a UF (e município)</li>
+          <li>Escolha o período (2014+)</li>
+          <li>Clique em <strong>Responder</strong></li>
+        </ol>
+      </div>
+    </aside>
 
-  <section>
-    <div class="card">
-      <canvas id="chart"></canvas>
-    </div>
+    <section class="card viz">
+      <div class="chartWrap">
+        <canvas id="chart"></canvas>
+      </div>
 
-    <div class="card kpis">
-      <div><b>Total</b><span id="kTotal">—</span></div>
-      <div><b>Média</b><span id="kMean">—</span></div>
-      <div><b>Pico</b><span id="kPeak">—</span></div>
-    </div>
+      <div class="kpis">
+        <div class="kpi"><div class="k">Total</div><div class="v" id="kTotal">—</div></div>
+        <div class="kpi"><div class="k">Média</div><div class="v" id="kMean">—</div></div>
+        <div class="kpi"><div class="k">Pico</div><div class="v" id="kPeak">—</div></div>
+      </div>
 
-    <div class="card">
-      <table id="table"></table>
-    </div>
-  </section>
-</main>
+      <div class="tableWrap">
+        <table id="table"></table>
+      </div>
+    </section>
+  </main>
 
-<script src="assets/app.js"></script>
+  <footer class="foot">
+    Fonte: DATASUS/SINAN (TABNET) • Painel Dengue — Ernandes Sobreira
+  </footer>
+
+  <script src="assets/app.js"></script>
 </body>
 </html>
