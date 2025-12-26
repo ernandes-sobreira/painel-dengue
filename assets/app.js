@@ -1,12 +1,14 @@
 /* =========================================================
    Painel Dengue — V1 (TABNET wide)
-   Brasil / Estados / Municípios
+   Brasil / Estados / Municípios — com UF e municípios reais
    ========================================================= */
 
+const CACHE = `?v=${Date.now()}`; // evita cache do GitHub Pages
+
 const FILES = {
-  br:  "data/dados-dengue.csv",
-  uf:  "data/dados-dengue-estados.csv",
-  mun: "data/dados-dengue-municipios.csv"
+  br:  `assets/data/dados-dengue.csv${CACHE}`,
+  uf:  `assets/data/dados-dengue-estados.csv${CACHE}`,
+  mun: `assets/data/dados-dengue-municipios.csv${CACHE}`
 };
 
 const START_YEAR = 2014;
@@ -58,10 +60,9 @@ function safeNum(v){
 
 async function fetchTextISO(url){
   const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`Falha ao carregar: ${url}`);
+  if(!res.ok) throw new Error(`Falha ao carregar: ${url} (${res.status})`);
   const buf = await res.arrayBuffer();
-  const dec = new TextDecoder("iso-8859-1");
-  return dec.decode(buf);
+  return new TextDecoder("iso-8859-1").decode(buf);
 }
 
 function tabnetParse(text){
@@ -82,16 +83,15 @@ function tabnetParse(text){
 function detectYearColumns(obj){
   return Object.keys(obj)
     .filter(k => /^\d{4}$/.test(k))
-    .map(k => Number(k))
+    .map(Number)
     .filter(y => y >= START_YEAR)
     .sort((a,b)=>a-b);
 }
 
-/* ------------------- BUILDERS ------------------- */
+/* ---------------- BUILDERS ---------------- */
 
 function buildBrasil(rows){
   const firstCol = Object.keys(rows[0])[0];
-  const years = [];
   const series = [];
 
   for(const r of rows){
@@ -102,11 +102,10 @@ function buildBrasil(rows){
 
     const total = safeNum(r["Total"]);
     series.push({ ano, casos: total });
-    years.push(ano);
   }
 
-  const ys = [...new Set(years)].sort((a,b)=>a-b);
-  return { series, years: ys };
+  const years = series.map(d=>d.ano);
+  return { series, years };
 }
 
 function buildEstados(rows){
@@ -116,15 +115,17 @@ function buildEstados(rows){
 
   for(const r of rows){
     const raw = String(r[firstCol] ?? "").replace(/"/g,"").trim();
+
+    // Pega "11 Rondônia" → "11"
     const m = raw.match(/^(\d{2})\s+/);
     if(!m) continue;
-    const uf_ibge = m[1];
+    const uf = m[1];
 
     // ignora ignorados
     const low = raw.toLowerCase();
     if(low.includes("ign") || low.includes("em branco")) continue;
 
-    byUf[uf_ibge] = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
+    byUf[uf] = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
   }
 
   return { years: yearCols, byUf };
@@ -134,26 +135,28 @@ function buildMunicipios(rows){
   const firstCol = Object.keys(rows[0])[0];
   const yearCols = detectYearColumns(rows[0]);
 
-  const byUf = {}; // { "51": { municipios:[nome...], byMunNome:{ nome: series } } }
+  const byUf = {};
 
   for(const r of rows){
     const raw = String(r[firstCol] ?? "").replace(/"/g,"").trim();
+
+    // "510250 Cáceres" (6 dígitos)
     if(!/^\d{6}\s+/.test(raw)) continue;
 
     const parts = raw.split(/\s+/);
     const mun_ibge6 = parts[0];
-    const uf_ibge = mun_ibge6.slice(0,2);
-    const mun_nome = parts.slice(1).join(" ").trim();
+    const uf = mun_ibge6.slice(0,2);
+    const nome = parts.slice(1).join(" ").trim();
 
-    if(!mun_nome) continue;
-    const low = mun_nome.toLowerCase();
+    if(!nome) continue;
+    const low = nome.toLowerCase();
     if(low.includes("ign") || low.includes("em branco")) continue;
 
-    if(!byUf[uf_ibge]) byUf[uf_ibge] = { municipios: [], byMunNome: {} };
+    if(!byUf[uf]) byUf[uf] = { municipios: [], byMunNome: {} };
 
     const series = yearCols.map(y => ({ ano:y, casos: safeNum(r[String(y)]) }));
-    byUf[uf_ibge].municipios.push(mun_nome);
-    byUf[uf_ibge].byMunNome[mun_nome] = series;
+    byUf[uf].municipios.push(nome);
+    byUf[uf].byMunNome[nome] = series;
   }
 
   for(const uf in byUf){
@@ -163,46 +166,41 @@ function buildMunicipios(rows){
   return { years: yearCols, byUf };
 }
 
-/* ------------------- UI HELPERS ------------------- */
+/* ---------------- UI ---------------- */
 
-function fillSelect(sel, items, placeholder="—"){
+function fillSelect(sel, items, placeholder){
   sel.innerHTML = "";
   sel.append(new Option(placeholder, ""));
-  for(const it of items){
-    sel.append(new Option(it.label, it.value));
-  }
+  items.forEach(it => sel.append(new Option(it.label, it.value)));
 }
 
 function setupYears(years){
-  const y0 = $("y0");
-  const y1 = $("y1");
-  y0.innerHTML = "";
-  y1.innerHTML = "";
-  years.forEach(y => {
-    y0.append(new Option(String(y), String(y)));
-    y1.append(new Option(String(y), String(y)));
+  $("y0").innerHTML = "";
+  $("y1").innerHTML = "";
+  years.forEach(y=>{
+    $("y0").append(new Option(String(y), String(y)));
+    $("y1").append(new Option(String(y), String(y)));
   });
-  y0.value = String(years[0]);
-  y1.value = String(years[years.length-1]);
+  $("y0").value = String(years[0]);
+  $("y1").value = String(years[years.length-1]);
 }
 
-function getAvailableUfs(){
-  // ROBUSTO: usa estados se existir; senão usa municípios
+function getUfsFromData(){
   const keysUf = Object.keys(DB.uf?.byUf || {});
   const keysMun = Object.keys(DB.mun?.byUf || {});
-  const ufs = (keysUf.length ? keysUf : keysMun)
-    .filter(k => /^\d{2}$/.test(k))
-    .sort((a,b)=> (UF_IBGE[a]?.sigla || a).localeCompare(UF_IBGE[b]?.sigla || b));
+  const keys = (keysUf.length ? keysUf : keysMun).filter(k => /^\d{2}$/.test(k));
 
-  return ufs.map(uf => {
+  keys.sort((a,b)=> (UF_IBGE[a]?.sigla || a).localeCompare(UF_IBGE[b]?.sigla || b));
+
+  return keys.map(uf => {
     const info = UF_IBGE[uf];
-    const label = info ? `${info.sigla} — ${info.nome}` : uf;
-    return { value: uf, label };
+    return { value: uf, label: info ? `${info.sigla} — ${info.nome}` : uf };
   });
 }
 
 function updateUFOptions(){
-  fillSelect($("uf"), getAvailableUfs(), "Selecione a UF");
+  const items = getUfsFromData();
+  fillSelect($("uf"), items, "Selecione a UF");
 }
 
 function updateMunOptions(){
@@ -246,14 +244,11 @@ function renderSeries(title, series){
         pointRadius:3
       }]
     },
-    options:{
-      responsive:true,
-      scales:{ y:{ ticks:{ callback:(v)=>fmt(v) } } }
-    }
+    options:{ responsive:true }
   });
 }
 
-/* ------------------- RUN ------------------- */
+/* ---------------- RUN ---------------- */
 
 function run(){
   const layer = $("layer").value;
@@ -313,7 +308,7 @@ function onLayerChange(){
   }
 }
 
-/* ------------------- BOOT ------------------- */
+/* ---------------- BOOT ---------------- */
 
 async function init(){
   try{
@@ -335,7 +330,7 @@ async function init(){
     run();
   }catch(err){
     console.error(err);
-    alert("Erro ao carregar dados. Abra o Console (F12) e me envie o erro.");
+    alert("Erro ao carregar dados. Abra o Console (F12) e copie o erro.");
   }
 }
 
